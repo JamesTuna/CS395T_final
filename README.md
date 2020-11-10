@@ -1,1 +1,1 @@
-# CS395T_final
+### robust least square on MNIST
