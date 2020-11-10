@@ -1,2 +1,6 @@
 rbls/data/*
 rbls/__pycache__/*
+*.npy
+*.xml
+rbls/.idea/dictionaries
+*.iml
