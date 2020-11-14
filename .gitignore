@@ -4,3 +4,4 @@ rbls/__pycache__/*
 *.xml
 rbls/.idea/dictionaries
 *.iml
+rbls/mnist_convNet.py
