@@ -25,8 +25,8 @@ class VortexLinear(nn.Module):
         # epsilon should be dimension-10
         for i in range(batch_size):
             y = Y[i] # shape [10]
-            V = torch.diag(X[i]) # shape [784,784]
-            V = torch.matmul(V,self.W) # shape [784,10]
+            # V = torch.diag(X[i]) # shape [784,784]
+            V = torch.transpose(X[i] * torch.transpose(self.W, 0, 1), 0, 1) # shape [784,10]
             t = torch.norm(V,dim=0) # shape [10]
             penalization_term = torch.abs(alpha1 * y) # shape [10]
             penalization_term = torch.mul(penalization_term,t) # shape [10]
@@ -65,10 +65,13 @@ class VortexLinear(nn.Module):
         for ep in range(epoch):
 
             epoch_loss = 0
-
             print("epoch %s/%s"%(ep+1,epoch))
 
-            X = X[np.random.choice(n_samples,n_samples,replace=False)] # shuffle
+            idx = np.arange(0, n_samples)
+            idx = idx[np.random.choice(n_samples, n_samples, replace=False)]  # shuffle
+            X = X[idx,:]
+            Y = Y[idx,:]
+
             n_steps = (n_samples//batch + 1) if (n_samples%batch > 0) else n_samples//batch
 
             for iter in range(n_steps):
@@ -102,7 +105,10 @@ class VortexLinear(nn.Module):
         for ep in range(epoch):
             epoch_loss = 0
             print("epoch %s/%s"%(ep+1,epoch))
-            X = X[np.random.choice(n_samples,n_samples,replace=False)] # shuffle
+            idx = np.arange(0, n_samples)
+            idx = idx[np.random.choice(n_samples,n_samples,replace=False)] # shuffle
+            X = X[idx,:]
+            Y = Y[idx,:]
             n_steps = (n_samples//batch + 1) if (n_samples%batch > 0) else n_samples//batch
             for iter in range(n_steps):
                 batch_X = X[iter * batch:min(iter * batch + batch, n_samples),:]
@@ -143,23 +149,23 @@ if __name__ == "__main__":
 
 
     model = VortexLinear(in_dim=784,out_dim=10,init_std=0.1)
-    optimizer = torch.optim.SGD(model.parameters(), lr=0.1)
+    optimizer = torch.optim.Adam(model.parameters(), lr=0.1, amsgrad=True)
 
     # train
     print('Vortex training with ro %.4f gamma %.4f'%(args.ro,args.gamma))
-    model.fit_(A_train,y_train_onehot,ro=args.ro,gamma=args.gamma,batch=60000,epoch=10000,ps=100,optimizer=optimizer)
+    model.fit(A_train,y_train_onehot,ro=args.ro,gamma=args.gamma,batch=60000,epoch=200,ps=100,optimizer=optimizer)
 
     # test
     W = model.W.cpu().detach().numpy()
-    noise_sample=2000
+    noise_sample=200
     accuracy = []
     print("test under noise %.4f"%(args.noise))
     for test in range(noise_sample):
         W_ = W * np.random.normal(1,args.noise,W.shape)
         y_hat = A_test.dot(W_)
-        print(list(y_hat[:3,]))
-        print(list(y_test_onehot[:5,]))
-        exit()
+        # print(list(y_hat[:3,]))
+        # print(list(y_test_onehot[:5,]))
+        # exit()
         pred = y_hat.argmax(axis=1)
         acc = np.count_nonzero(pred == y_test.reshape(-1))/y_test.shape[0]
         if test % 100 == 99:
