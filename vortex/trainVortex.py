@@ -3,11 +3,14 @@
 import torch.nn as nn
 import torch
 import numpy as np
+import time
 
 class VortexLinear(nn.Module):
-    def __init__(self,in_dim,out_dim,init_std=0.1):
+    def __init__(self,in_dim,out_dim,init_std=0.1,cuda=False):
         super(VortexLinear, self).__init__()
         self.W = nn.Parameter(torch.FloatTensor(in_dim,out_dim).normal_(0,init_std))
+        self.cuda = cuda
+        self.to('cuda:0')
 
     def forward(self,X):
         return torch.matmul(X,self.W)
@@ -52,6 +55,8 @@ class VortexLinear(nn.Module):
 
         for ep in range(epoch):
 
+            start = time.time()
+
             epoch_loss = 0
 
             if ep % dacay_epoch == dacay_epoch - 1:
@@ -71,6 +76,11 @@ class VortexLinear(nn.Module):
                 batch_X = torch.Tensor(batch_X)
                 batch_Y = torch.Tensor(batch_Y)
 
+                if self.cuda:
+                    batch_X = batch_X.to('cuda:0')
+                    batch_Y = batch_Y.to('cuda:0')
+
+
                 optimizer.zero_grad()
                 loss = self.VortexLoss(batch_X,batch_Y,ro,gamma)
                 loss.backward()
@@ -81,7 +91,8 @@ class VortexLinear(nn.Module):
 
                 if iter % ps == ps - 1:
                     print("step %s, batch loss %.4f"%(iter+1,batch_loss))
-            print("epoch averaged loss %.4f"%(epoch_loss/n_steps))
+            end = time.time()
+            print("[%.2f seconds]epoch averaged loss %.4f"%(end-start,epoch_loss/n_steps))
 
 
 if __name__ == "__main__":
@@ -91,6 +102,7 @@ if __name__ == "__main__":
     parser.add_argument('--gamma',type=float, default=0,help='gamma')
     parser.add_argument('--ro',type=float, default=0,help='ro')
     parser.add_argument('--saveas', type=str, help='full path to save the trained model')
+    parser.add_argument('--cuda', action="store_true", default=False)
     args = parser.parse_args()
 
     A_train = np.load('../rbls/data/A.npy') # [60000,784]
@@ -98,7 +110,7 @@ if __name__ == "__main__":
     y_train_onehot[y_train_onehot==0]=-1
 
 
-    model = VortexLinear(in_dim=784,out_dim=10,init_std=0.1)
+    model = VortexLinear(in_dim=784,out_dim=10,init_std=0.1,cuda=args.cuda)
     optimizer = torch.optim.SGD(model.parameters(), lr=0.1)
 
     # train
