@@ -10,7 +10,8 @@ class VortexLinear(nn.Module):
         super(VortexLinear, self).__init__()
         self.W = nn.Parameter(torch.FloatTensor(in_dim,out_dim).normal_(0,init_std))
         self.cuda = cuda
-        self.to('cuda:0')
+        if cuda:
+            self.to('cuda:0')
 
     def forward(self,X):
         return torch.matmul(X,self.W)
