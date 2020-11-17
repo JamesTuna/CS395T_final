@@ -93,6 +93,7 @@ class cMLP(nn.Module):
                 if self.mode == 0:
                     m.generate_random_mask(noise_scale)
                 if self.mode == 1: #train mask mode
+                    # 这个函数我咋找不到定义？
                     m.generate_random_mask_asparas(noise_scale)
 
     def clear_mask(self):
@@ -106,6 +107,7 @@ class cMLP(nn.Module):
         return self.layers(x)
 
     def print_grad(self):
+        # named_parameters 我也找不到定义？应该是self.layers.named_parameters()？
         for name, para in self.named_parameters():
             print(name,'shape',(para.size()))
             print(para.grad)
