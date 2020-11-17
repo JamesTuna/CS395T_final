@@ -52,7 +52,7 @@ class VortexLinear(nn.Module):
 
         n_samples = X.shape[0]
         decay_rate = 0.1
-        dacay_epoch = 20
+        dacay_epoch = 40
 
         for ep in range(epoch):
 
@@ -116,7 +116,7 @@ if __name__ == "__main__":
 
     # train
     print('Vortex training with ro %.4f gamma %.4f'%(args.ro,args.gamma))
-    model.fit(A_train,y_train_onehot,ro=args.ro,gamma=args.gamma,batch=128,epoch=100,ps=1000,optimizer=optimizer)
+    model.fit(A_train,y_train_onehot,ro=args.ro,gamma=args.gamma,batch=128,epoch=200,ps=1000,optimizer=optimizer)
 
     # save
     W = model.W.cpu().detach().numpy()
