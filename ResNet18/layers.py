@@ -48,8 +48,8 @@ class cLinear(nn.Module):
                 out = out + self.b
         else:
             # noise
-            PW = torch.mul(CW,self.W)
-            Pb = torch.mul(Cb,self.b)
+            PW = torch.mul(self.C_W,self.W)
+            Pb = torch.mul(self.C_b,self.b)
             out = torch.matmul(x, PW.transpose(1,0))
             if self.use_bias:
                 out = out + Pb
@@ -118,8 +118,8 @@ class cConv2d(nn.Module):
 
         else:
             # noise
-            PW = torch.mul(CW,self.W)
-            Pb = torch.mul(Cb,self.b)
+            PW = torch.mul(self.C_W,self.W)
+            Pb = torch.mul(self.C_b,self.b)
             if self.use_bias:
                 out = F.conv2d(x,PW,bias = Pb, padding=self.padding, stride=self.stride)
             else:
