@@ -171,7 +171,7 @@ class RobustTrainer():
 
             # save model
             if epoch % save_per_epochs == save_per_epochs - 1 or epoch == self.epochs - 1:
-                torch.save(self.model.state_dict(),SAVEDIR+'__epoch%s'%(epoch+1))
+                torch.save(self.model.state_dict(),saveas+'__epoch%s'%(epoch+1))
 
 
         # plot curves and save under logdir

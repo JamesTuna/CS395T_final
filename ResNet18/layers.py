@@ -15,20 +15,20 @@ class cLinear(nn.Module):
         self.b = layer.bias
         self.inDim = inDim
         self.outDim = outDim
-        self.use_cuda = torch.cuda.is_available()
         self.C_W = None
         self.C_b = None
         self.use_bias = use_bias
 
     def generate_random_mask(self,noise_scale):
         # generate random Gaussian mask for C_W and C_b
-        if self.use_cuda:
+        device = self.W.device
+        if device.type == "cuda":
             if noise_scale == 0:
-                CW = torch.cuda.FloatTensor(self.inDim,self.outDim).zero_()
-                Cb = torch.cuda.FloatTensor(self.outDim).zero_()
+                CW = torch.cuda.FloatTensor(self.inDim,self.outDim,device=device).zero_()
+                Cb = torch.cuda.FloatTensor(self.outDim,device=device).zero_()
             else:
-                CW = torch.cuda.FloatTensor(self.inDim,self.outDim).normal_(0,noise_scale)
-                Cb = torch.cuda.FloatTensor(self.outDim).normal_(0,noise_scale)
+                CW = torch.cuda.FloatTensor(self.inDim,self.outDim,device=device).normal_(0,noise_scale)
+                Cb = torch.cuda.FloatTensor(self.outDim,device=device).normal_(0,noise_scale)
         else:
             if noise_scale == 0:
                 CW = torch.FloatTensor(self.inDim,self.outDim).zero_()
@@ -41,30 +41,18 @@ class cLinear(nn.Module):
         self.C_b = Cb + 1
 
     def forward(self,x):
-        # C_W is the coefficient matrix for weight
-        # C_b is the coefficient matrix for bias
-        C_W = self.C_W
-        C_b = self.C_b
-        if self.use_cuda:
-            if C_W == None or C_b == None:
-                CW = torch.cuda.FloatTensor(self.outDim,self.inDim).zero_() + 1
-                Cb = torch.cuda.FloatTensor(self.outDim).zero_() + 1
-            else:
-                CW = C_W
-                Cb = C_b
+        if self.C_W is None:
+            # no noise
+            out = torch.matmul(x,self.W.transpose(1,0))
+            if self.use_bias:
+                out = out + self.b
         else:
-            if C_W == None or C_b == None:
-                CW = torch.FloatTensor(self.outDim,self.inDim).zero_() + 1
-                Cb = torch.FloatTensor(self.outDim).zero_() + 1
-            else:
-                CW = C_W
-                Cb = C_b
-
-        PW = torch.mul(CW,self.W)
-        Pb = torch.mul(Cb,self.b)
-        out = torch.matmul(x, PW.transpose(1,0))
-        if self.use_bias:
-            out = out + Pb
+            # noise
+            PW = torch.mul(CW,self.W)
+            Pb = torch.mul(Cb,self.b)
+            out = torch.matmul(x, PW.transpose(1,0))
+            if self.use_bias:
+                out = out + Pb
         return out
 
 
@@ -93,20 +81,20 @@ class cConv2d(nn.Module):
         self.padding = padding
         self.use_bias = bias
         self.stride = stride
-        self.use_cuda = torch.cuda.is_available()
         self.C_W = None
         self.C_b = None
 
     def generate_random_mask(self,noise_scale):
         # generate random Gaussian mask for C_W and C_b
         o,i,h,w = self.weight_shape
-        if self.use_cuda:
+        device = self.W.device
+        if device.type == "cuda":
             if noise_scale == 0:
-                CW = torch.cuda.FloatTensor(o,i,h,w).zero_()
-                Cb = torch.cuda.FloatTensor(self.bias_shape).zero_()
+                CW = torch.cuda.FloatTensor(o,i,h,w,device=device).zero_()
+                Cb = torch.cuda.FloatTensor(self.bias_shape,device=device).zero_()
             else:
-                CW = torch.cuda.FloatTensor(o,i,h,w).normal_(0,noise_scale)
-                Cb = torch.cuda.FloatTensor(self.bias_shape).normal_(0,noise_scale)
+                CW = torch.cuda.FloatTensor(o,i,h,w,device=device).normal_(0,noise_scale)
+                Cb = torch.cuda.FloatTensor(self.bias_shape,device=device).normal_(0,noise_scale)
         else:
             if noise_scale == 0:
                 CW = torch.FloatTensor(o,i,h,w).zero_()
@@ -121,28 +109,19 @@ class cConv2d(nn.Module):
     def forward(self,x):
         # C_W is the coefficient matrix for weight
         # C_b is the coefficient matrix for bias
-        o,i,h,w = self.weight_shape
-        C_W = self.C_W
-        C_b = self.C_b
-        if self.use_cuda:
-            if C_W == None or C_b == None:
-                CW = torch.cuda.FloatTensor(o,i,h,w).zero_() + 1
-                Cb = torch.cuda.FloatTensor(self.bias_shape).zero_() + 1
+        if self.C_W is None:
+            # no noise
+            if self.use_bias:
+                out = F.conv2d(x,self.W,bias = self.b,padding=self.padding, stride=self.stride)
             else:
-                CW = C_W
-                Cb = C_b
+                out = F.conv2d(x,self.W,bias = None,padding=self.padding, stride=self.stride)
+
         else:
-            if C_W == None or C_b == None:
-                CW = torch.FloatTensor(o,i,h,w).zero_() + 1
-                Cb = torch.FloatTensor(self.bias_shape).zero_() + 1
+            # noise
+            PW = torch.mul(CW,self.W)
+            Pb = torch.mul(Cb,self.b)
+            if self.use_bias:
+                out = F.conv2d(x,PW,bias = Pb, padding=self.padding, stride=self.stride)
             else:
-                CW = C_W
-                Cb = C_b
-
-        PW = torch.mul(CW,self.W)
-
-        if self.use_bias:
-            out = F.conv2d(x,PW,bias = torch.mul(Cb,self.b),padding=self.padding, stride=self.stride)
-        else:
-            out = F.conv2d(x,PW,bias = None,stride = self.stride,padding=self.padding)
+                out = F.conv2d(x,PW,bias = None,padding=self.padding, stride=self.stride)
         return out
