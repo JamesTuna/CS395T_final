@@ -220,11 +220,11 @@ class RobustTrainer():
                 # loss 1
                 self.model_copy.generate_mask(self.noise_scale)
                 output1 = self.model_copy(x)
-                l1 = self.loss(output1, label).data.item()
+                l1 = self.loss(output1, label)
                 # loss 2
                 self.model_copy.generate_mask(self.noise_scale)
                 output2 = self.model_copy(x)
-                l2 = self.loss(output2, label).data.item()
+                l2 = self.loss(output2, label)
 
                 est_mean = (l1+l2)/2
                 est_std = 0.7071 * torch.norm(l1-l2,p=1)
