@@ -1,0 +1,21 @@
+0.050 quantile:	acc: 0.7888	
+0.100 quantile:	acc: 0.7959	
+0.150 quantile:	acc: 0.8006	
+0.200 quantile:	acc: 0.8038	
+0.250 quantile:	acc: 0.8063	
+0.300 quantile:	acc: 0.8086	
+0.350 quantile:	acc: 0.8107	
+0.400 quantile:	acc: 0.8126	
+0.450 quantile:	acc: 0.8144	
+0.500 quantile:	acc: 0.8160	
+0.550 quantile:	acc: 0.8177	
+0.600 quantile:	acc: 0.8192	
+0.650 quantile:	acc: 0.8208	
+0.700 quantile:	acc: 0.8225	
+0.750 quantile:	acc: 0.8241	
+0.800 quantile:	acc: 0.8259	
+0.850 quantile:	acc: 0.8281	
+0.900 quantile:	acc: 0.8305	
+0.950 quantile:	acc: 0.8340	
+Expectation:	acc: 0.8143
+Variance:	acc: 0.0002
