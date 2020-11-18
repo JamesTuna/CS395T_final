@@ -119,8 +119,8 @@ class cConv2d(nn.Module):
         else:
             # noise
             PW = torch.mul(self.C_W,self.W)
-            Pb = torch.mul(self.C_b,self.b)
             if self.use_bias:
+                Pb = torch.mul(self.C_b,self.b)
                 out = F.conv2d(x,PW,bias = Pb, padding=self.padding, stride=self.stride)
             else:
                 out = F.conv2d(x,PW,bias = None,padding=self.padding, stride=self.stride)
