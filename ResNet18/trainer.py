@@ -105,6 +105,7 @@ class RobustTrainer():
                 for param_group in optimizer.param_groups:
                     param_group['lr'] = lr
             running_loss = 0
+            avg_loss = 0
             for i, data in enumerate(self.train_loader, 0):
                 self.model.train()
                 self.model_copy = copy.deepcopy(self.model)
@@ -139,16 +140,17 @@ class RobustTrainer():
                 optimizer.step()
 
                 running_loss = 0.9 * running_loss + 0.1 * l.data.item()
+                avg_loss = (avg_loss * i + l.data.item())/(i+1)
 
                 if i%print_step == print_step-1:
-                    print("epoch %s step %s running loss %.4f"%(epoch,i+1,running_loss))
+                    print("epoch %s step %s avg loss %.4f"%(epoch,i+1,avg_loss))
 
             # log training and test loss at the end of each epoch
             end = time.time()
             epoch_time = end - start
             print("at the end of epoch %s[%.2f seconds]"%(epoch,epoch_time))
-            print("running loss %.4f"%(running_loss))
-            log_train_loss.append(running_loss)
+            print("running_loss %.4f avg loss %.4f"%(running_loss,avg_loss))
+            log_train_loss.append(avg_loss)
 
             correct = 0
             total = 0
