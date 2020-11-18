@@ -54,7 +54,8 @@ class VortexLinear(nn.Module):
         for ep in range(epoch):
 
             epoch_loss = 0
-
+            # 为啥不用Adam？可以用torch.optim.lr_scheduler？（https://pytorch.org/docs/stable/optim.html）
+            # 用exponential decay是不是降得太快了？
             if ep % dacay_epoch == dacay_epoch - 1:
                 for g in optimizer.param_groups:
                     g['lr'] *= decay_rate
