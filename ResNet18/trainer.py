@@ -183,3 +183,101 @@ class RobustTrainer():
         plt.ylabel('loss')
         plt.title('Training Loss with n=%s'%self.daso_n)
         plt.savefig(logdir+'/training_loss.pdf')
+
+
+
+    def mean_var_optimization(self,lambda=10,print_step=1000,optimizer='Adam',reduce_lr_per_epochs=None,reduce_rate=0.5,
+                        logdir='./',saveas='unamedModel.ckpt',save_per_epochs=100):
+
+        # optimze a lower bound of [mean(loss) + lambda * std(loss)]
+
+        device = "cpu" if self.cuda is None else self.cuda
+        if optimizer=='SGD':
+            optimizer = torch.optim.SGD(self.model.parameters(), lr=self.lr,momentum=0.9, weight_decay=5e-4)
+        else:
+            optimizer = torch.optim.Adam(self.model.parameters(), lr=self.lr)
+        log_train_loss = []
+        for epoch in range(self.epochs):
+            start = time.time()
+            if reduce_lr_per_epochs is not None:
+                lr = (reduce_rate ** (epoch//reduce_lr_per_epochs))*self.lr
+                for param_group in optimizer.param_groups:
+                    param_group['lr'] = lr
+            running_loss = 0
+            avg_loss = 0
+            for i, data in enumerate(self.train_loader, 0):
+                self.model.train()
+                self.model_copy = copy.deepcopy(self.model)
+
+                x, label = data
+                x = x.to(device)
+                label = label.to(device)
+                # step 1, sample 2 variations
+                # estimate mean(loss) + lambda std(loss)
+                layer_name_list = ['conv1']+['layer%s.block0.downsample.dsp_conv'%(l) for l in range(2,5)]+['layer%s.block%s.conv%s'%(l,b,c) for l in range(1,5) for b in range(2) for c in range(1,3)]
+                max_loss = 0
+
+                # loss 1
+                self.model_copy.generate_mask(self.noise_scale)
+                output1 = self.model_copy(x)
+                l1 = self.loss(output1, label).data.item()
+                # loss 2
+                self.model_copy.generate_mask(self.noise_scale)
+                output2 = self.model_copy(x)
+                l2 = self.loss(output2, label).data.item()
+
+                est_mean = (l1+l2)/2
+                est_std = 0.7071 * torch.norm(l1-l2,p=1)
+                l = est_mean + lambda * est_std
+
+                # step 2
+                # backprop using the new loss
+                optimizer.zero_grad()
+                output = self.model(x)
+                l.backward()
+                optimizer.step()
+
+                running_loss = 0.9 * running_loss + 0.1 * l.data.item()
+                avg_loss = (avg_loss * i + l.data.item())/(i+1)
+
+                if i%print_step == print_step-1:
+                    print("epoch %s step %s avg loss %.4f"%(epoch,i+1,avg_loss))
+
+            # log training and test loss at the end of each epoch
+            end = time.time()
+            epoch_time = end - start
+            print("at the end of epoch %s[%.2f seconds]"%(epoch,epoch_time))
+            print("running_loss %.4f avg loss %.4f"%(running_loss,avg_loss))
+            log_train_loss.append(avg_loss)
+
+            correct = 0
+            total = 0
+            accumulative_loss = 0
+            count = 0
+            self.model.eval()
+            self.model.clear_mask()
+            for t_images, t_labels in self.test_loader:
+                count += 1
+                t_images = t_images.to(device)
+                t_outputs = self.model(t_images)
+                t_labels = t_labels.to(device)
+                t_loss = self.loss(t_outputs,t_labels)
+                accumulative_loss += t_loss.data.item()
+                _, t_predicted = torch.max(t_outputs.data, 1)
+                total += t_labels.size(0)
+                correct += (t_predicted == t_labels).sum()
+            acc = (correct.data.item()/ total)
+            print('test loss: %.4f, test acc: %.4f'%(accumulative_loss/count, acc))
+
+            # save model
+            if epoch % save_per_epochs == save_per_epochs - 1 or epoch == self.epochs - 1:
+                torch.save(self.model.state_dict(),saveas+'__epoch%s'%(epoch+1))
+
+
+        # plot curves and save under logdir
+        log_train_loss = np.array(log_train_loss)
+        plt.plot(log_train_loss)
+        plt.xlabel('Epoch')
+        plt.ylabel('loss')
+        plt.title('Training Loss with n=%s'%self.daso_n)
+        plt.savefig(logdir+'/training_loss.pdf')
