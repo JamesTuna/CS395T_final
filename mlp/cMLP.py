@@ -29,8 +29,12 @@ class cLinear(nn.Module):
                 CW = torch.cuda.FloatTensor(self.inDim,self.outDim).normal_(0,noise_scale)
                 Cb = torch.cuda.FloatTensor(self.outDim).normal_(0,noise_scale)
         else:
-            CW = torch.FloatTensor(self.inDim,self.outDim).normal_(0,noise_scale)
-            Cb = torch.FloatTensor(self.outDim).normal_(0,noise_scale)
+            if self.noise == 0:
+                CW = torch.FloatTensor(self.inDim,self.outDim).zero_()
+                Cb = torch.FloatTensor(self.outDim).zero_()
+            else:
+                CW = torch.FloatTensor(self.inDim,self.outDim).normal_(0,noise_scale)
+                Cb = torch.FloatTensor(self.outDim).normal_(0,noise_scale)
 
         self.C_W = CW.transpose(1,0) + 1
         self.C_b = Cb + 1
@@ -68,7 +72,6 @@ class cMLP(nn.Module):
         assert num_layers >= 1, "num_layers must be >= 1"
         self.num_layers = num_layers
         self.layers = nn.Sequential()
-        self.mode = 0
         if num_layers == 1:
             self.layers.add_module('layer1',cLinear(input_dim,output_dim))
         else:
@@ -90,11 +93,7 @@ class cMLP(nn.Module):
     def generate_mask(self,noise_scale):
         for m in self.modules():
             if isinstance(m,cLinear):
-                if self.mode == 0:
-                    m.generate_random_mask(noise_scale)
-                if self.mode == 1: #train mask mode
-                    # 这个函数我咋找不到定义？
-                    m.generate_random_mask_asparas(noise_scale)
+                m.generate_random_mask(noise_scale)
 
     def clear_mask(self):
         # clear all masks used in cLinear layers
@@ -105,9 +104,3 @@ class cMLP(nn.Module):
 
     def forward(self,x):
         return self.layers(x)
-
-    def print_grad(self):
-        # named_parameters 我也找不到定义？应该是self.layers.named_parameters()？
-        for name, para in self.named_parameters():
-            print(name,'shape',(para.size()))
-            print(para.grad)
