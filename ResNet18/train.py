@@ -43,7 +43,7 @@ test_dataset = torchvision.datasets.CIFAR10(root='../rbls/data', train=False,dow
 test_loader = torch.utils.data.DataLoader(test_dataset, batch_size=1000,shuffle=False)
 
 # GPU
-device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+device = torch.device("cuda:%s"%args.cuda if args.cuda is not None else "cpu")
 model = rresnet18(num_classes=10)
 # load saved model or not
 if args.load is not None:
