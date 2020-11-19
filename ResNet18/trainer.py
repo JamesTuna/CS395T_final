@@ -122,7 +122,7 @@ class RobustTrainer():
                     self.model_copy.generate_mask(self.noise_scale)
                     output_ = self.model_copy(x)
                     l_ = self.loss(output_, label)
-                    l_ = l_.data.item()
+                    l_ = l_.cpu().data.item()
                     if l_ > max_loss:
                         max_loss = l_
                         for layer_name in layer_name_list:
