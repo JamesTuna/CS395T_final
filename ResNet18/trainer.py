@@ -88,7 +88,7 @@ class RobustTrainer():
         plt.savefig(logdir+'/test_%s_perturbation_%s.pdf'%(repeat,noise_scale))
 
 
-    def train_daso_n(self,print_step=1000,optimizer='Adam',reduce_lr_per_epochs=None,reduce_rate=0.5,
+    def train_daso_n(self,continueEp=0,print_step=1000,optimizer='Adam',reduce_lr_per_epochs=None,reduce_rate=0.5,
                         logdir='./',saveas='unamedModel.ckpt',save_per_epochs=100):
         # self.daso_n is the number of random noise matrix
         # gradient was calculated w.r.t the noise matrix resulting in largest loss
@@ -98,7 +98,7 @@ class RobustTrainer():
         else:
             optimizer = torch.optim.Adam(self.model.parameters(), lr=self.lr)
         log_train_loss = []
-        for epoch in range(self.epochs):
+        for epoch in range(continueEp,self.epochs):
             start = time.time()
             if reduce_lr_per_epochs is not None:
                 lr = (reduce_rate ** (epoch//reduce_lr_per_epochs))*self.lr
@@ -121,7 +121,8 @@ class RobustTrainer():
                 for _ in range(self.daso_n):
                     self.model_copy.generate_mask(self.noise_scale)
                     output_ = self.model_copy(x)
-                    l_ = self.loss(output_, label).data.item()
+                    l_ = self.loss(output_, label)
+                    l_ = l_.data.item()
                     if l_ > max_loss:
                         max_loss = l_
                         for layer_name in layer_name_list:
@@ -186,10 +187,10 @@ class RobustTrainer():
 
 
 
-    def mean_var_optimization(self,lambda=10,print_step=1000,optimizer='Adam',reduce_lr_per_epochs=None,reduce_rate=0.5,
+    def mean_var_optimization(self,lambDa=10,print_step=1000,optimizer='Adam',reduce_lr_per_epochs=None,reduce_rate=0.5,
                         logdir='./',saveas='unamedModel.ckpt',save_per_epochs=100):
 
-        # optimze a lower bound of [mean(loss) + lambda * std(loss)]
+        # optimze a lower bound of [mean(loss) + lambDa * std(loss)]
 
         device = "cpu" if self.cuda is None else self.cuda
         if optimizer=='SGD':
@@ -213,7 +214,7 @@ class RobustTrainer():
                 x = x.to(device)
                 label = label.to(device)
                 # step 1, sample 2 variations
-                # estimate mean(loss) + lambda std(loss)
+                # estimate mean(loss) + lambDa std(loss)
                 layer_name_list = ['conv1']+['layer%s.block0.downsample.dsp_conv'%(l) for l in range(2,5)]+['layer%s.block%s.conv%s'%(l,b,c) for l in range(1,5) for b in range(2) for c in range(1,3)]
                 max_loss = 0
 
@@ -228,7 +229,7 @@ class RobustTrainer():
 
                 est_mean = (l1+l2)/2
                 est_std = 0.7071 * torch.norm(l1-l2,p=1)
-                l = est_mean + lambda * est_std
+                l = est_mean + lambDa * est_std
 
                 # step 2
                 # backprop using the new loss
