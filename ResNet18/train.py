@@ -22,6 +22,7 @@ parser.add_argument('--save-per-epochs',type=int, default=100,help='how many epo
 parser.add_argument('--decay-epochs',type=int, default=400,help='how many epochs to decay lr')
 parser.add_argument('--decay-rate',type=float, default=0.1,help='lr decay ratio')
 parser.add_argument('--cuda',type=int, default=None,help='cuda index if use cuda')
+parser.add_argument('--continueEp',type=int, default=0,help='if load a trained model and wish to keep train it, specify the break point epoch')
 args = parser.parse_args()
 
 transform_train = transforms.Compose([
@@ -47,10 +48,27 @@ device = torch.device("cuda:%s"%args.cuda if args.cuda is not None else "cpu")
 model = rresnet18(num_classes=10)
 # load saved model or not
 if args.load is not None:
+    print("try load %s"%(args.load))
     model.load_state_dict(torch.load(args.load))
     print(args.load+" loaded")
 model.to(device)
 loss = nn.CrossEntropyLoss()
+
+if (not args.continueEp == 0) and args.load is not None:
+    try:
+        trained = int((args.load).split("epoch")[1])
+        print("trained %s"%trained)
+        if trained == args.continueEp:
+            print("safely keep training after %s epochs"%trained)
+        else:
+            print('warning: %s already trained %s epochs, not match args.continueEp=%s'%(args.load,trained,args.continueEp))
+    except:
+        print("trained epoch unknown for model %s"%args.load)
+
+if (not args.continueEp == 0) and args.load is None:
+    print("when train from scratch, argument --continue must be 0")
+    exit(1)
+
 
 
 # optimizer
@@ -58,5 +76,5 @@ trainer = RobustTrainer(model,train_loader=train_loader,test_loader=test_loader,
                 noise_scale=args.noise,epochs=args.epoch,daso_n=args.n,
                     lr=args.lr,cuda=None if args.cuda is None else "cuda:%s"%args.cuda)
 
-trainer.train_daso_n(saveas=args.saveas,save_per_epochs=args.save_per_epochs,logdir=args.logdir,print_step=args.ps,
+trainer.train_daso_n(saveas=args.saveas,continueEp=args.continueEp,save_per_epochs=args.save_per_epochs,logdir=args.logdir,print_step=args.ps,
                         optimizer=args.opt,reduce_lr_per_epochs=args.decay_epochs,reduce_rate=args.decay_rate)
