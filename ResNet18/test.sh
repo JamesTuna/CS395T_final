@@ -10,7 +10,7 @@ do
   logdir=test_results/noise${noise}_daso1
   mkdir $logdir
   model_file=$model_dir/noise_${noise}_daso1/saved.ckpt__epoch1000
-  python3 test.py --load $model_file --noise $noise --samples $samples --cuda $cuda --logdir $logdir
+  python3 test.py --load $model_file --noise $noise --samples $samples --cuda $cuda --logdir $logdir &
 
   logdir=test_results/noise${noise}_daso5
   mkdir $logdir
