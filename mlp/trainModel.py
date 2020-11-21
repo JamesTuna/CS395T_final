@@ -33,24 +33,34 @@ parser.add_argument('--cuda',type=int, default=None,help='cuda index if use cuda
 
 args = parser.parse_args()
 
-transform_train = transforms.Compose([
-    transforms.RandomCrop(32, padding=4),
-    transforms.RandomHorizontalFlip(),
-    transforms.ToTensor(),
-    transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010)),
-])
-
-transform_test = transforms.Compose([
-    transforms.ToTensor(),
-    transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010)),
-])
-
+######################################################################
+# For the CIFAR10 dataset
+###############################
+# transform_train = transforms.Compose([
+#     transforms.RandomCrop(32, padding=4),
+#     transforms.RandomHorizontalFlip(),
+#     transforms.ToTensor(),
+#     transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010)),
+# ])
+#
+# transform_test = transforms.Compose([
+#     transforms.ToTensor(),
+#     transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010)),
+# ])
+######################################################################
+# For the MNIST dataset
+###############################
+transforms = transforms.Compose([
+        transforms.ToTensor(),
+        transforms.Normalize((0.1307,), (0.3081,))
+        ])
+######################################################################
 
 # MNIST Dataset (Images and Labels)
-# train_dataset = dsets.MNIST(root ='../rbls/data',train = True,transform = transforms.ToTensor(),download = True)
-# test_dataset = dsets.MNIST(root ='../rbls/data',train = False,transform = transforms.ToTensor())
-train_dataset = torchvision.datasets.CIFAR10(root='../rbls/data', train=True, download=True, transform=transform_train)
-test_dataset = torchvision.datasets.CIFAR10(root='../rbls/data', train=False,download=True, transform=transform_test)
+train_dataset = torchvision.datasets.MNIST(root ='./rbls/data',train=True,transform=transforms, download=True)
+test_dataset = torchvision.datasets.MNIST(root ='./rbls/data',train=False,transform=transforms, download=True)
+# train_dataset = torchvision.datasets.CIFAR10(root='../rbls/data', train=True, download=True, transform=transform_train)
+# test_dataset = torchvision.datasets.CIFAR10(root='../rbls/data', train=False,download=True, transform=transform_test)
 
 # Dataset Loader (Input Pipeline)
 train_loader = torch.utils.data.DataLoader(dataset = train_dataset,batch_size = args.batch_size,shuffle = True)

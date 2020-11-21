@@ -179,7 +179,7 @@ class RobustTrainer():
             optimizer = torch.optim.Adam(self.model.parameters(), lr=self.lr, amsgrad=True)
 
         log_train_loss = []
-        for epoch in range(self.epochs):
+        for epoch in range(self.train_epochs):
             start = time.time()
             if (optimizer == 'SGD') and (reduce_lr_per_epochs is not None):
                 lr = (reduce_rate ** (epoch // reduce_lr_per_epochs)) * self.lr
@@ -252,7 +252,7 @@ class RobustTrainer():
             print('test loss: %.4f, test acc: %.4f' % (accumulative_loss / count, acc))
 
             # save model
-            if ((epoch % save_per_epochs) == (save_per_epochs - 1)) or (epoch == (self.epochs - 1)):
+            if ((epoch % save_per_epochs) == (save_per_epochs - 1)) or (epoch == (self.train_epochs - 1)):
                 torch.save(self.model.state_dict(), saveas + '__epoch%s' % (epoch + 1))
 
         # plot curves and save under logdir

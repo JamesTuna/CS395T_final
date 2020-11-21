@@ -45,14 +45,14 @@ class cLinear(nn.Module):
         C_W = self.C_W
         C_b = self.C_b
         if self.use_cuda:
-            if C_W == None or C_b == None:
+            if (C_W is None) or (C_b is None):
                 CW = torch.cuda.FloatTensor(self.outDim,self.inDim).zero_() + 1
                 Cb = torch.cuda.FloatTensor(self.outDim).zero_() + 1
             else:
                 CW = C_W
                 Cb = C_b
         else:
-            if C_W == None or C_b == None:
+            if (C_W is None) or (C_b is None):
                 CW = torch.FloatTensor(self.outDim,self.inDim).zero_() + 1
                 Cb = torch.FloatTensor(self.outDim).zero_() + 1
             else:
@@ -61,6 +61,7 @@ class cLinear(nn.Module):
 
         PW = torch.mul(CW,self.W)
         Pb = torch.mul(Cb,self.b)
+        # print(f"shape of x is {x.shape}, shape of PW is {PW.shape}, shape of PW^T is {PW.transpose(1,0).shape}")
         out = torch.matmul(x, PW.transpose(1,0))
         if self.use_bias:
             out = out + Pb
@@ -103,4 +104,5 @@ class cMLP(nn.Module):
                 m.C_b = None
 
     def forward(self,x):
+        x = x.view(-1, x.shape[-1] ** 2)
         return self.layers(x)
