@@ -32,6 +32,7 @@ class RobustTrainer():
         acc_list = []
         device = "cpu" if self.cuda is None else self.cuda
         for test in range(repeat):
+            start = time.time()
             print('test no.%s'%(test))
             self.model.generate_mask(noise_scale)
             # performance on testset
@@ -51,7 +52,8 @@ class RobustTrainer():
                 total += t_labels.size(0)
                 correct += (t_predicted == t_labels).sum()
             acc = (correct.data.item()/ total)
-            print('test loss: %.4f, test acc: %.4f'%(accumulative_loss/count, acc))
+            end = time.time()
+            print('[%.2f seconds]test loss: %.4f, test acc: %.4f'%(end-start,accumulative_loss/count, acc))
             loss_list.append(accumulative_loss/count)
             acc_list.append(acc)
 
