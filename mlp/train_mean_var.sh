@@ -1,3 +1,5 @@
+#!/bin/bash
+
 noises="0 0.2 0.4 0.8 1.0"
 lambs='3 5 7 9 11 13 15 17 19 20'
 worst_among_n=10
@@ -13,7 +15,9 @@ batch_size=128
 print_step=1000
 cuda=0
 
-if [ ! -d $log_dir ]; then
+#num_procs=5
+
+if [ ! -d t$log_dir ]; then
   mkdir $log_dir
 fi
 
@@ -22,27 +26,31 @@ if [ ! -d $model_dir ]; then
 fi
 
 # train model
-for lamb in $lambs
-do
-  for noise in $noises
-  do
+for lamb in $lambs; do
+  for noise in $noises; do
     layer=2
     hidden=32
     model_id="l"$layer"h"$hidden"lamb"$lamb"noise"$noise"n"$worst_among_n"_lr"$lr"ep"$epoch"decay"$decay_epoch"rate"$decay_ratio
     log_dir_specific=$log_dir"/"$model_id
-    if [ ! -d $log_dir_specific ]; then
-      mkdir $log_dir_specific
+    if [ ! -d "$log_dir_specific" ]; then
+      mkdir "$log_dir_specific"
     fi
 
-    save_as=$model_dir"/"$model_id".ckpt"
+    save_as="$model_dir/$model_id.ckpt"
 
-    echo "start training model "$model_id"..."
+    echo "start training model $model_id..."
     python3 trainModel.py --layer $layer --hidden $hidden \
                           --noise $noise --n $worst_among_n \
                           --lamb $lamb \
                           --opt $opt --lr $lr --batch_size $batch_size \
                           --epoch $epoch --lr_decay_epoch $decay_epoch --lr_decay_rate $decay_ratio \
-                          --ps $print_step --logdir $log_dir_specific --save_as $save_as \
-                          --save-per-epochs 100 --cuda $cuda &
+                          --ps $print_step --logdir "$log_dir_specific" --save_as "$save_as" \
+                          --save-per-epochs 100 --cuda $cuda # &
+
+#    background=( $(jobs -p) )
+#    if (( ${#background[@]} > num_procs )); then
+#      wait -n
+#    fi
+
   done
 done
