@@ -1,0 +1,21 @@
+0.050 quantile:	acc: 0.8057	loss: 0.6817
+0.100 quantile:	acc: 0.8091	loss: 0.6888
+0.150 quantile:	acc: 0.8113	loss: 0.6939
+0.200 quantile:	acc: 0.8129	loss: 0.6984
+0.250 quantile:	acc: 0.8143	loss: 0.7028
+0.300 quantile:	acc: 0.8155	loss: 0.7063
+0.350 quantile:	acc: 0.8165	loss: 0.7097
+0.400 quantile:	acc: 0.8175	loss: 0.7134
+0.450 quantile:	acc: 0.8184	loss: 0.7168
+0.500 quantile:	acc: 0.8192	loss: 0.7204
+0.550 quantile:	acc: 0.8200	loss: 0.7242
+0.600 quantile:	acc: 0.8209	loss: 0.7280
+0.650 quantile:	acc: 0.8217	loss: 0.7322
+0.700 quantile:	acc: 0.8224	loss: 0.7369
+0.750 quantile:	acc: 0.8233	loss: 0.7417
+0.800 quantile:	acc: 0.8243	loss: 0.7472
+0.850 quantile:	acc: 0.8253	loss: 0.7541
+0.900 quantile:	acc: 0.8266	loss: 0.7642
+0.950 quantile:	acc: 0.8284	loss: 0.7798
+Expectation:	acc: 0.8184	loss: 0.7242
+Variance:	acc: 0.0000	loss: 0.0009
