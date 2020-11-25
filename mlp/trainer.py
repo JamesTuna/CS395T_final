@@ -38,6 +38,8 @@ class RobustTrainer():
                 for param_group in optimizer.param_groups:
                     param_group['lr'] = lr
             running_loss = 0
+            avg_loss = 0
+            start = time.time()
             for i, data in enumerate(self.train_loader, 0):
                 self.model.train()
                 self.model_copy = copy.deepcopy(self.model) # self.model stores parameters, model_copy is to find the worst (weight+noise) among n noises
@@ -65,11 +67,13 @@ class RobustTrainer():
                 l.backward()
                 optimizer.step()
                 running_loss = 0.9 * running_loss + 0.1 * l.data.item()
+                avg_loss = (i * avg_loss + l.data.item())/(i+1)
+                end = time.time()
 
             # log training and test loss at the end of each epoch
-            print("at the end of epoch %s, lr %s"%(epoch,lr))
-            print("running loss %.4f"%(running_loss))
-            log_train_loss.append(running_loss)
+            print("[%.2f seconds]at the end of epoch %s, lr %s"%(end-start,epoch,lr))
+            print("epoch avg loss %.4f"%(avg_loss))
+            log_train_loss.append(avg_loss)
 
             correct = 0
             total = 0
@@ -262,28 +266,3 @@ class RobustTrainer():
         plt.ylabel('loss')
         plt.title('Training Loss with lambda=%s' % lamb)
         plt.savefig(logdir + '/training_loss.pdf')
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

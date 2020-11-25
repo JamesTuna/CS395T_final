@@ -21,13 +21,14 @@ class cLinear(nn.Module):
 
     def generate_random_mask(self,noise_scale):
         # generate random Gaussian mask: C_W and C_b
+        device = self.W.device
         if self.use_cuda:
             if noise_scale == 0:
-                CW = torch.cuda.FloatTensor(self.inDim,self.outDim).zero_()
-                Cb = torch.cuda.FloatTensor(self.outDim).zero_()
+                CW = torch.cuda.FloatTensor(self.inDim,self.outDim,device=device).zero_()
+                Cb = torch.cuda.FloatTensor(self.outDim,device=device).zero_()
             else:
-                CW = torch.cuda.FloatTensor(self.inDim,self.outDim).normal_(0,noise_scale)
-                Cb = torch.cuda.FloatTensor(self.outDim).normal_(0,noise_scale)
+                CW = torch.cuda.FloatTensor(self.inDim,self.outDim,device=device).normal_(0,noise_scale)
+                Cb = torch.cuda.FloatTensor(self.outDim,device=device).normal_(0,noise_scale)
         else:
             if self.noise == 0:
                 CW = torch.FloatTensor(self.inDim,self.outDim).zero_()
@@ -44,10 +45,11 @@ class cLinear(nn.Module):
         # C_b is the coefficient matrix for bias
         C_W = self.C_W
         C_b = self.C_b
+        device = self.W.device
         if self.use_cuda:
             if (C_W is None) or (C_b is None):
-                CW = torch.cuda.FloatTensor(self.outDim,self.inDim).zero_() + 1
-                Cb = torch.cuda.FloatTensor(self.outDim).zero_() + 1
+                CW = torch.cuda.FloatTensor(self.outDim,self.inDim,,device=device).zero_() + 1
+                Cb = torch.cuda.FloatTensor(self.outDim,,device=device).zero_() + 1
             else:
                 CW = C_W
                 Cb = C_b
