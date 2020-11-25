@@ -48,8 +48,8 @@ class cLinear(nn.Module):
         device = self.W.device
         if self.use_cuda:
             if (C_W is None) or (C_b is None):
-                CW = torch.cuda.FloatTensor(self.outDim,self.inDim,,device=device).zero_() + 1
-                Cb = torch.cuda.FloatTensor(self.outDim,,device=device).zero_() + 1
+                CW = torch.cuda.FloatTensor(self.outDim,self.inDim,device=device).zero_() + 1
+                Cb = torch.cuda.FloatTensor(self.outDim,device=device).zero_() + 1
             else:
                 CW = C_W
                 Cb = C_b
