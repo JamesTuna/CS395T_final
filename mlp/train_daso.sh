@@ -41,6 +41,6 @@ do
                         --noise $noise --n $worst_among_n \
                         --opt $opt --lr $lr --batch_size $batch_size \
                         --epoch $epoch --lr_decay_epoch $decay_epoch --lr_decay_rate $decay_ratio \
-                        --ps $print_step --logdir $log_dir_specific --save_as $save_as --cuda 0 &
+                        --ps $print_step --logdir $log_dir_specific --save_as $save_as --cuda $cuda &
 
 done

@@ -106,5 +106,5 @@ class cMLP(nn.Module):
                 m.C_b = None
 
     def forward(self,x):
-        x = x.view(-1, x.shape[-1] ** 2)
+        
         return self.layers(x)
