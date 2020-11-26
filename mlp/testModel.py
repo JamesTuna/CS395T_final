@@ -32,7 +32,7 @@ test_loader = torch.utils.data.DataLoader(dataset = test_dataset,batch_size = ba
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 model = cMLP(input_dim=28*28,output_dim=10,num_layers=args.layer,num_hidden_neurons=args.hidden)
 # load saved model
-st_dict = torch.load(args.load)
+st_dict = torch.load(args.load,map_location=device)
 remove_para = []
 for name in st_dict:
     if name.endswith('C_W') or name.endswith('C_b'):
