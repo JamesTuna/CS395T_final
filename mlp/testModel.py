@@ -43,6 +43,6 @@ model.load_state_dict(st_dict)
 model.to(device)
 loss = nn.CrossEntropyLoss()
 # optimizer
-trainer = RobustTrainer(model,train_loader=train_loader,test_loader=test_loader,loss = loss,noise_scale=PERTURBATION)
+trainer = RobustTrainer(model,train_loader=train_loader,test_loader=test_loader,loss = loss,noise_scale=PERTURBATION,cuda="cuda:0" if torch.cuda.is_available() else None)
 # Test for random sampled noise
 trainer.test(noise_scale=PERTURBATION,repeat=args.samples,use_cuda = torch.cuda.is_available(),logdir=args.logdir)
