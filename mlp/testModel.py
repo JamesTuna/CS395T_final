@@ -32,7 +32,7 @@ test_loader = torch.utils.data.DataLoader(dataset = test_dataset,batch_size = ba
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 model = cMLP(input_dim=28*28,output_dim=10,num_layers=args.layer,num_hidden_neurons=args.hidden)
 # load saved model
-st_dict = torch.load(args.load)
+st_dict = torch.load(args.load,map_location=device)
 remove_para = []
 for name in st_dict:
     if name.endswith('C_W') or name.endswith('C_b'):
@@ -43,6 +43,6 @@ model.load_state_dict(st_dict)
 model.to(device)
 loss = nn.CrossEntropyLoss()
 # optimizer
-trainer = RobustTrainer(model,train_loader=train_loader,test_loader=test_loader,loss = loss,noise_scale=PERTURBATION)
+trainer = RobustTrainer(model,train_loader=train_loader,test_loader=test_loader,loss = loss,noise_scale=PERTURBATION,cuda="cuda:0" if torch.cuda.is_available() else None)
 # Test for random sampled noise
 trainer.test(noise_scale=PERTURBATION,repeat=args.samples,use_cuda = torch.cuda.is_available(),logdir=args.logdir)
