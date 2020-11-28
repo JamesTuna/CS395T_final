@@ -7,7 +7,7 @@ f = plt.figure(figsize=(15,8))
 ####################################### accuracy ########################################
 high_qtl = 0.95
 low_qtl = 0.05
-daso_n=5
+daso_n=10
 
 noise_list = [0.2,0.4,0.6,0.8,1.0]
 
@@ -21,8 +21,8 @@ daso_mean_list = []
 
 for i in range(len(noise_list)):
     noise = noise_list[i]
-    ni_acc_file = np.load('test_results/noise%s_daso%s/acc_10000samples.npy'%(noise,1))
-    daso_acc_file = np.load('test_results/noise%s_daso%s/acc_10000samples.npy'%(noise,daso_n))
+    ni_acc_file = np.load('logs/l5h32noise%sn%s_lr0.01ep1000decay250rate0.2/noise%s/acc.npy'%(noise,1,noise))
+    daso_acc_file = np.load('logs/l5h32noise%sn%s_lr0.01ep1000decay250rate0.2/noise%s/acc.npy'%(noise,daso_n,noise))
     NI_low_qtl_list.append(np.quantile(ni_acc_file,low_qtl))
     NI_high_qtl_list.append(np.quantile(ni_acc_file,high_qtl))
     NI_mean_list.append(ni_acc_file.mean())
@@ -76,8 +76,8 @@ daso_mean_list = []
 
 for i in range(len(noise_list)):
     noise = noise_list[i]
-    ni_acc_file = np.load('test_results/noise%s_daso%s/loss_10000samples.npy'%(noise,1))
-    daso_acc_file = np.load('test_results/noise%s_daso%s/loss_10000samples.npy'%(noise,daso_n))
+    ni_acc_file = np.load('logs/l5h32noise%sn%s_lr0.01ep1000decay250rate0.2/noise%s/loss.npy'%(noise,1,noise))
+    daso_acc_file = np.load('logs/l5h32noise%sn%s_lr0.01ep1000decay250rate0.2/noise%s/loss.npy'%(noise,daso_n,noise))
     NI_low_qtl_list.append(np.quantile(ni_acc_file,low_qtl))
     NI_high_qtl_list.append(np.quantile(ni_acc_file,high_qtl))
     NI_mean_list.append(ni_acc_file.mean())
@@ -126,11 +126,11 @@ BINS=25
 f = plt.figure(figsize=(20,10))
 for i in range(len(noise_list)):
     noise = noise_list[i]
-    ni_acc_file = np.load('test_results/noise%s_daso%s/acc_10000samples.npy'%(noise,1))
-    daso_acc_file = np.load('test_results/noise%s_daso%s/acc_10000samples.npy'%(noise,daso_n))
+    ni_acc_file = np.load('logs/l5h32noise%sn%s_lr0.01ep1000decay250rate0.2/noise%s/acc.npy'%(noise,1,noise))
+    daso_acc_file = np.load('logs/l5h32noise%sn%s_lr0.01ep1000decay250rate0.2/noise%s/acc.npy'%(noise,daso_n,noise))
 
-    ni_loss_file = np.load('test_results/noise%s_daso%s/loss_10000samples.npy'%(noise,1))
-    daso_loss_file = np.load('test_results/noise%s_daso%s/loss_10000samples.npy'%(noise,daso_n))
+    ni_loss_file = np.load('logs/l5h32noise%sn%s_lr0.01ep1000decay250rate0.2/noise%s/loss.npy'%(noise,1,noise))
+    daso_loss_file = np.load('logs/l5h32noise%sn%s_lr0.01ep1000decay250rate0.2/noise%s/loss.npy'%(noise,daso_n,noise))
 
 
     ax = f.add_subplot(5,4,i*4+1)

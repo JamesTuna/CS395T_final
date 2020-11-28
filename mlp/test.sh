@@ -5,9 +5,9 @@ worst_among_ns="1 5 10 20 50"
 opt="SGD"
 log_dir="logs"
 model_dir="saved_models"
-epoch=1000
-decay_epoch=250
-decay_ratio=0.2
+epoch=400
+decay_epoch=100
+decay_ratio=0.1
 lr=0.01
 samples=10000
 
