@@ -21,11 +21,13 @@ PERTURBATION = args.noise
 SAVEDIR = args.load
 batch_size = args.batch_size
 
+transforms = transforms.Compose([
+        transforms.ToTensor(),
+        transforms.Normalize((0.1307,), (0.3081,))
+        ])
 # MNIST Dataset (Images and Labels)
-train_dataset = dsets.MNIST(root ='../rbls/data',train = True,transform = transforms.ToTensor(),download = True)
-test_dataset = dsets.MNIST(root ='../rbls/data',train = False,transform = transforms.ToTensor())
+test_dataset = dsets.MNIST(root ='../rbls/data',train = False,transform = transforms)
 # Dataset Loader (Input Pipeline)
-train_loader = torch.utils.data.DataLoader(dataset = train_dataset,batch_size = batch_size,shuffle = True)
 test_loader = torch.utils.data.DataLoader(dataset = test_dataset,batch_size = batch_size,shuffle = False)
 
 # GPU
@@ -43,6 +45,6 @@ model.load_state_dict(st_dict)
 model.to(device)
 loss = nn.CrossEntropyLoss()
 # optimizer
-trainer = RobustTrainer(model,train_loader=train_loader,test_loader=test_loader,loss = loss,noise_scale=PERTURBATION,cuda="cuda:0" if torch.cuda.is_available() else None)
+trainer = RobustTrainer(model,train_loader=None,test_loader=test_loader,loss = loss,noise_scale=PERTURBATION,cuda="cuda:0" if torch.cuda.is_available() else None)
 # Test for random sampled noise
 trainer.test(noise_scale=PERTURBATION,repeat=args.samples,use_cuda = torch.cuda.is_available(),logdir=args.logdir)
