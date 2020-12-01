@@ -134,8 +134,8 @@ for i in range(len(noise_list)):
 
 
     ax = f.add_subplot(5,4,i*4+1)
-    ax.hist(ni_acc_file,bins=BINS,label='NI',alpha=0.5,density=False)
-    ax.hist(daso_acc_file,bins=BINS,label='DASO-n%s'%(daso_n),alpha=0.5,density=False)
+    ax.hist(ni_acc_file,bins=BINS,label='NI',alpha=0.5,density=True)
+    ax.hist(daso_acc_file,bins=BINS,label='DASO-n%s'%(daso_n),alpha=0.5,density=True)
 
     ax.set_ylabel('Count')
     ax.set_xlabel('Accuracy')
@@ -144,8 +144,8 @@ for i in range(len(noise_list)):
     #if args.left is not None and args.right is not None:
     #    plt.xlim([args.left,args.right])
     ax = f.add_subplot(5,4,i*4+2)
-    ax.hist(ni_acc_file,500*BINS,density=False,label='NI',histtype='step',cumulative=True)
-    ax.hist(daso_acc_file,500*BINS,density=False,label='DASO-n%s'%(daso_n),histtype='step',cumulative=True)
+    ax.hist(ni_acc_file,500*BINS,density=True,label='NI',histtype='step',cumulative=True)
+    ax.hist(daso_acc_file,500*BINS,density=True,label='DASO-n%s'%(daso_n),histtype='step',cumulative=True)
     ax.set_ylabel('CDF')
     ax.set_xlabel('Accuracy')
     ax.legend(loc='best')
@@ -154,8 +154,8 @@ for i in range(len(noise_list)):
     #    ax.xlim([args.left,args.right])
 
     ax = f.add_subplot(5,4,i*4+3)
-    ax.hist(ni_loss_file,bins=BINS,label='NI',alpha=0.5,density=False)
-    ax.hist(daso_loss_file,bins=BINS,label='DASO-n%s'%(daso_n),alpha=0.5,density=False)
+    ax.hist(ni_loss_file,bins=BINS,label='NI',alpha=0.5,density=True)
+    ax.hist(daso_loss_file,bins=BINS,label='DASO-n%s'%(daso_n),alpha=0.5,density=True)
 
     ax.set_ylabel('Count')
     ax.set_xlabel('loss')
@@ -165,8 +165,8 @@ for i in range(len(noise_list)):
     #    plt.xlim([args.left,args.right])
 
     ax = f.add_subplot(5,4,i*4+4)
-    ax.hist(ni_loss_file,500*BINS,density=False,label='NI',histtype='step',cumulative=True)
-    ax.hist(daso_loss_file,500*BINS,density=False,label='DASO-n%s'%(daso_n),histtype='step',cumulative=True)
+    ax.hist(ni_loss_file,500*BINS,density=True,label='NI',histtype='step',cumulative=True)
+    ax.hist(daso_loss_file,500*BINS,density=True,label='DASO-n%s'%(daso_n),histtype='step',cumulative=True)
     ax.set_ylabel('CDF')
     ax.set_xlabel('loss')
     ax.legend(loc='best')
