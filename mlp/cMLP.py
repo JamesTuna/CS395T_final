@@ -30,7 +30,7 @@ class cLinear(nn.Module):
                 CW = torch.cuda.FloatTensor(self.inDim,self.outDim,device=device).normal_(0,noise_scale)
                 Cb = torch.cuda.FloatTensor(self.outDim,device=device).normal_(0,noise_scale)
         else:
-            if self.noise == 0:
+            if noise_scale == 0:
                 CW = torch.FloatTensor(self.inDim,self.outDim).zero_()
                 Cb = torch.FloatTensor(self.outDim).zero_()
             else:
@@ -106,5 +106,5 @@ class cMLP(nn.Module):
                 m.C_b = None
 
     def forward(self,x):
-        
+
         return self.layers(x)
