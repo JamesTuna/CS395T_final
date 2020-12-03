@@ -16,7 +16,7 @@ mkdir $model_dir
 
 
 ############################################### pre train model #########################################
-noises="0.2 0.4 0.6 0.8"
+noises="0.1 0.3"
 daso_n=1
 for noise in $noises
 do
@@ -34,7 +34,7 @@ do
                         --ps $print_step --logdir $log_dir_specific --save_as $save_as --cuda $cuda &
 done
 
-noise=1.0
+noise=0.5
 pretrain_model_id="pretrain_l"$layer"h"$hidden"noise"$noise"n"$daso_n"_lr"$lr"ep"$epoch"decay"$decay_epoch"rate"$decay_ratio
 log_dir_specific=$log_dir"/"$pretrain_model_id
 mkdir $log_dir_specific
@@ -47,7 +47,7 @@ python3 ../mlp/trainDASO.py --layer $layer --hidden $hidden \
                       --ps $print_step --logdir $log_dir_specific --save_as $save_as --cuda $cuda
 ############################################### post train model #########################################
 daso_ns="1 5 10 20 50"
-noises="0.2 0.4 0.6 0.8"
+noises="0.1 0.3"
 for daso_n in $daso_ns
 do
   for noise in $noises
@@ -67,7 +67,7 @@ do
                           --load $load --cuda $cuda &
   done
 
-  noise=1.0
+  noise=0.5
   load=$model_dir"/pretrain_l"$layer"h"$hidden"noise"$noise"n1_lr"$lr"ep"$epoch"decay"$decay_epoch"rate"$decay_ratio".ckpt"
   model_id="l"$layer"h"$hidden"noise"$noise"n"$daso_n"_lr"$lr"ep"$epoch"decay"$decay_epoch"rate"$decay_ratio
   log_dir_specific=$log_dir"/"$model_id

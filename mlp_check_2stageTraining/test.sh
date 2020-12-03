@@ -1,6 +1,6 @@
 layer=5
 hidden=32
-noises="0.2 0.4 0.6 0.8"
+noises="0.1 0.3"
 worst_among_ns="1 5 10 20 50"
 opt="SGD"
 log_dir="logs"
@@ -25,7 +25,7 @@ do
                           --noise $noise_test --logdir $results_dir\
                           --load $load &
   done
-  noise=1.0
+  noise=0.5
   model_id="l"$layer"h"$hidden"noise"$noise"n"$worst_among_n"_lr"$lr"ep"$epoch"decay"$decay_epoch"rate"$decay_ratio
   load=$model_dir"/"$model_id".ckpt"
   noise_test=$noise
