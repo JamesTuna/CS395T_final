@@ -69,7 +69,7 @@ device = torch.device("cuda:%s" % args.cuda if args.cuda is not None else "cpu")
 model = cMLP(input_dim=28*28,output_dim=10,num_layers=args.layer,num_hidden_neurons=args.hidden)
 # load saved model or not
 if args.load is not None:
-    model.load_state_dict(torch.load(args.load))
+    model.load_state_dict(torch.load(args.load,map_location=device))
     print(args.load + " loaded")
 model.to(device)
 loss = nn.CrossEntropyLoss()
