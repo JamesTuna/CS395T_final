@@ -61,7 +61,7 @@ echo "run python3 train.py --n $daso_n --opt SGD --lr 0.01 --batch-size 128 --ep
 
 python3 train.py --n $daso_n --opt SGD --lr $lr --batch-size 128 --epoch $epochs \
                   --decay-epochs $decay_epochs --decay-rate $decay_rate \
-                    --noise $n --ps 1000 --logdir $A --saveas $B --cuda $cuda &
+                    --noise $n --ps 1000 --logdir $A --saveas $B --cuda $cuda
 
 
 ########################################### posttrain #################################################
