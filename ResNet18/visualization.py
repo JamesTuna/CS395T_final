@@ -2,12 +2,11 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
-f = plt.figure(figsize=(15,8))
 
 ####################################### accuracy ########################################
 high_qtl = 0.95
 low_qtl = 0.05
-daso_n=5
+daso_n=50
 
 noise_list = [0.2,0.4,0.6,0.8,1.0]
 
@@ -31,6 +30,33 @@ for i in range(len(noise_list)):
     daso_high_qtl_list.append(np.quantile(daso_acc_file,high_qtl))
     daso_mean_list.append(daso_acc_file.mean())
 
+# error bar plot
+noise_list = np.array(noise_list)
+NI_low_qtl_list = np.array(NI_low_qtl_list)
+NI_high_qtl_list = np.array(NI_high_qtl_list)
+NI_mean_list =np.array(NI_mean_list)
+daso_low_qtl_list = np.array(daso_low_qtl_list)
+daso_high_qtl_list = np.array(daso_high_qtl_list)
+daso_mean_list = np.array(daso_mean_list)
+
+ytop = NI_high_qtl_list - NI_mean_list
+ybot = NI_mean_list - NI_low_qtl_list
+plt.errorbar(noise_list,NI_mean_list,(ybot,ytop),fmt='-o',label="NI")
+
+ytop = daso_high_qtl_list - daso_mean_list
+ybot = daso_mean_list - daso_low_qtl_list
+print(ytop)
+print(daso_mean_list)
+print(ybot)
+plt.errorbar(noise_list+0.01,daso_mean_list,(ybot,ytop),fmt='-o',label="daso%s"%daso_n)
+
+plt.xlabel("Noise Standard Deviation")
+plt.ylabel("Test Accuracy")
+plt.legend()
+plt.xticks(noise_list)
+plt.title("ResNet18 on CIFAR10")
+
+f = plt.figure(figsize=(15,8))
 # mean plot
 ax1 = f.add_subplot(2,3,1)
 ax1.plot(noise_list,NI_mean_list,label='noise injection',color='black')
