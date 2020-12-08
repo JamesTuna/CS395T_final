@@ -9,14 +9,14 @@ batch_size=128
 print_step=1000
 cuda=0
 layer=5
-hidden=32
+hidden=16
 mkdir $log_dir
 mkdir $model_dir
 
 
 
 ############################################### pre train model #########################################
-noises="0.1 0.3"
+noises="0.1 0.2 0.3 0.4"
 daso_n=1
 for noise in $noises
 do
@@ -47,7 +47,7 @@ python3 ../mlp/trainDASO.py --layer $layer --hidden $hidden \
                       --ps $print_step --logdir $log_dir_specific --save_as $save_as --cuda $cuda
 ############################################### post train model #########################################
 daso_ns="1 5 10 20 50"
-noises="0.1 0.3"
+noises="0.1 0.2 0.3 0.4"
 for daso_n in $daso_ns
 do
   for noise in $noises

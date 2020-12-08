@@ -1,6 +1,6 @@
 layer=5
-hidden=32
-noises="0.1 0.3"
+hidden=16
+noises="0.1 0.2 0.3 0.4"
 worst_among_ns="1 5 10 20 50"
 opt="SGD"
 log_dir="logs"

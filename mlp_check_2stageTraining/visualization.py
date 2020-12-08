@@ -2,14 +2,14 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
-f = plt.figure(figsize=(15,8))
 
 ####################################### accuracy ########################################
 high_qtl = 0.95
 low_qtl = 0.05
 daso_n=50
 
-noise_list = [0.2,0.4,0.6,0.8,1.0]
+noise_list = [0.2,0.4,0.5,0.6,0.8]
+#noise_list = [0.5]
 
 NI_low_qtl_list = []
 NI_high_qtl_list = []
@@ -31,6 +31,35 @@ for i in range(len(noise_list)):
     daso_high_qtl_list.append(np.quantile(daso_acc_file,high_qtl))
     daso_mean_list.append(daso_acc_file.mean())
 
+# error bar plot
+noise_list = np.array(noise_list)
+NI_low_qtl_list = np.array(NI_low_qtl_list)
+NI_high_qtl_list = np.array(NI_high_qtl_list)
+NI_mean_list =np.array(NI_mean_list)
+daso_low_qtl_list = np.array(daso_low_qtl_list)
+daso_high_qtl_list = np.array(daso_high_qtl_list)
+daso_mean_list = np.array(daso_mean_list)
+
+ytop = NI_high_qtl_list - NI_mean_list
+ybot = NI_mean_list - NI_low_qtl_list
+plt.errorbar(noise_list,NI_mean_list,(ybot,ytop),fmt='-o',label="NI")
+
+ytop = daso_high_qtl_list - daso_mean_list
+ybot = daso_mean_list - daso_low_qtl_list
+print(ytop)
+print(daso_mean_list)
+print(ybot)
+plt.errorbar(noise_list+0.01,daso_mean_list,(ybot,ytop),fmt='-o',label="daso%s"%daso_n)
+
+plt.xlabel("Noise Standard Deviation")
+plt.ylabel("Test Accuracy")
+plt.legend()
+plt.xticks(noise_list)
+plt.title("MLP on MNIST (5 layers 32 hidden neurons)")
+plt.show()
+
+
+f = plt.figure(figsize=(15,8))
 # mean plot
 ax1 = f.add_subplot(2,3,1)
 ax1.plot(noise_list,NI_mean_list,label='noise injection',color='black')
@@ -122,8 +151,8 @@ plt.show()
 
 
 ################################# histograms ######################################
-BINS=50
-f = plt.figure(figsize=(20,10))
+BINS=30
+f = plt.figure(figsize=(20,2*len(noise_list)))
 for i in range(len(noise_list)):
     noise = noise_list[i]
     ni_acc_file = np.load('logs/l5h32noise%sn%s_lr0.01ep400decay100rate0.1/noise%s/acc.npy'%(noise,1,noise))
@@ -133,7 +162,7 @@ for i in range(len(noise_list)):
     daso_loss_file = np.load('logs/l5h32noise%sn%s_lr0.01ep400decay100rate0.1/noise%s/loss.npy'%(noise,daso_n,noise))
 
 
-    ax = f.add_subplot(5,4,i*4+1)
+    ax = f.add_subplot(len(noise_list),4,i*4+1)
     ax.hist(ni_acc_file,bins=BINS,label='NI',alpha=0.5,density=True)
     ax.hist(daso_acc_file,bins=BINS,label='DASO-n%s'%(daso_n),alpha=0.5,density=True)
 
@@ -143,7 +172,7 @@ for i in range(len(noise_list)):
     ax.legend(loc='best')
     #if args.left is not None and args.right is not None:
     #    plt.xlim([args.left,args.right])
-    ax = f.add_subplot(5,4,i*4+2)
+    ax = f.add_subplot(len(noise_list),4,i*4+2)
     ax.hist(ni_acc_file,500*BINS,density=True,label='NI',histtype='step',cumulative=True)
     ax.hist(daso_acc_file,500*BINS,density=True,label='DASO-n%s'%(daso_n),histtype='step',cumulative=True)
     ax.set_ylabel('CDF')
@@ -153,7 +182,7 @@ for i in range(len(noise_list)):
     #if args.left is not None and args.right is not None:
     #    ax.xlim([args.left,args.right])
 
-    ax = f.add_subplot(5,4,i*4+3)
+    ax = f.add_subplot(len(noise_list),4,i*4+3)
     ax.hist(ni_loss_file,bins=BINS,label='NI',alpha=0.5,density=True)
     ax.hist(daso_loss_file,bins=BINS,label='DASO-n%s'%(daso_n),alpha=0.5,density=True)
 
@@ -164,7 +193,7 @@ for i in range(len(noise_list)):
     #if args.left is not None and args.right is not None:
     #    plt.xlim([args.left,args.right])
 
-    ax = f.add_subplot(5,4,i*4+4)
+    ax = f.add_subplot(len(noise_list),4,i*4+4)
     ax.hist(ni_loss_file,500*BINS,density=True,label='NI',histtype='step',cumulative=True)
     ax.hist(daso_loss_file,500*BINS,density=True,label='DASO-n%s'%(daso_n),histtype='step',cumulative=True)
     ax.set_ylabel('CDF')
