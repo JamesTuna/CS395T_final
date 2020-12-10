@@ -1,4 +1,4 @@
-noises="0.1 0.2 0.3 0.4"
+noises="0.5"
 daso_ns="1 50"
 model_dir="saved_models/lr0.0001_ep1000_decay400_rate0.1"
 samples=10000
