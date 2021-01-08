@@ -1,0 +1,359 @@
+\documentclass{article}
+\renewcommand{\baselinestretch}{1.5}
+
+\usepackage[nonatbib,preprint]{neurips_2020}
+\usepackage[utf8]{inputenc} % allow utf-8 input
+\usepackage[T1]{fontenc}    % use 8-bit T1 fonts
+\usepackage{hyperref}       % hyperlinks
+\usepackage{url}            % simple URL typesetting
+\usepackage{booktabs}       % professional-quality tables
+\usepackage{amsfonts}       % blackboard math symbols
+\usepackage{nicefrac}       % compact symbols for 1/2, etc.
+\usepackage{microtype}      % microtypography
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% other packages than nips template%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\usepackage{float}
+\usepackage{ dsfont } % for fancy Reals R
+\usepackage{graphicx} %image support
+\usepackage{subcaption} %nested figures
+\usepackage{csvsimple} %loading tables dynamically while drafting
+\usepackage{amsthm} % for use of \begin{proof}
+\newtheorem{theorem}{Theorem}[section] % for use of \begin{theorem}
+\newtheorem{lemma}[theorem]{Lemma}
+\usepackage{amsmath} % aligned equations
+\usepackage{comment} % for comment
+\usepackage{xcolor}
+\usepackage{algorithm}
+\usepackage[noend]{algpseudocode}
+\usepackage{algorithm}
+\usepackage{algpseudocode}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\title{CS395T Final Report\\ Robust DNN Optimization}
+\author{Zihao Deng, Shentao Yang}
+\begin{document}
+\maketitle
+\begin{abstract}
+Processing In Memory(PIM) technology enables efficient calculations of Deep Neural Networks (DNNs).
+It is able to both accelerate the inference and to save the energy.
+However, PIM technology comes at a price that analog devices can suffer from spatial variability.
+Hence training of DNNs on PIM devices needs to take into account such spatial variability.
+Prior work has developed a stochastic-optimization-based training algorithm that uses the expectation of the loss function to guide the weight updates. We argue that capturing only the expectation of the loss is insufficient. Instead, the goal should be to directly aim to shift the entire DNN performance distribution.
+To achieve the goal, we develop an enhanced  stochastic-optimization-based training algorithm that uses the empirical quantile function of the DNN distribution  to guide its parameter updates.
+We relate minimization based on the empirical quantile fucntion to minimization based on minimization of the sample-based nth order statistics of loss. This allows us to use an efficient Monte-Carlo-based method to compute variability-aware weight updates in the course of SGD.
+We demonstrate that the enhanced algorithm is capable of reducing the 95\%-quantile loss by 15\%.
+
+\end{abstract}
+
+\section{Inrtoduction}
+Processing In Memory(PIM) technology enables efficient inference of Deep Neural Networks (DNNs).
+However, PIM technology comes at a price that analog devices suffer from device variability.
+It means that when parameters are programmed as resistances or threshold voltages onto memory devices, the programmed values deviate from their intended values.
+As a result, directly programming a conventionally trained DNN on PIM devices leads to significant performance degradation.
+To compensate for the degradation, Variability-aware Training (VAT) was proposed.
+VAT utilizes statistical models of parameter variations during training to make DNNs more robust when their parameters are exposed to corresponding variations.
+Some of the existing VAT algorithms \cite{Liu2015VortexVT}\cite{Zhou2020NoisyMU} are able to train more robust DNNs than conventional training.
+In image classification tasks, they claim to improve the mean accuracy of models tested under variations by 50\% or even more compared to conventional training.
+However, these VAT algorithms only consider and test the mean performance (i.e., loss and accuracy).
+For DNN accelerator researchers and manufacturers, a robust guarantee on majority (e.g. 95\%) of devices is more of interest than mean statistics.
+Hence in our work, we try to design a VAT algorithm that effectively addresses the following problem -- \textbf{\textit{How can we train a DNN to converge at a set of parameters that performs well on 95\% devices with parameter variations?}}
+
+\section{Related Works}
+In this section we review existing VAT algorithms and their limitations.
+Vortex \cite{Liu2015VortexVT} is the first work we found that formally introduces the concept of "VAT".
+It discusses a linear model and gives an upper bounds of the first order Taylor approximation of the variations of the ouputs.
+The approximation term is added into the original loss function as a regularization.
+Because of the linearity, the problem can be formulated as an SOCP.
+However, it cannot be applied to train DNN with non-linear activations.
+
+\begin{figure}[H]
+	\centering
+	\begin{subfigure}{.49\textwidth}
+		\includegraphics[width=\textwidth]{figs/normal_flow.pdf}
+		\caption{}
+	\end{subfigure}
+%%%%%%%%%%%%%%
+	\begin{subfigure}{.49\textwidth}
+		\includegraphics[width=\textwidth]{figs/ni_flow.pdf}
+		\caption{}
+	\end{subfigure}
+
+	\caption{Computational Graphs of (a) conventional training (b) the basic sampling-based training}
+	\label{fig:CompGraphNI}
+%%%%%%%%%%%%%%
+\end{figure}
+Currently, the most effective VAT techniques is referred to as Noise Injection in work \cite{Long2019DesignOR}\cite{Charan2020AccurateIW}\cite{Zhou2020NoisyMU}.
+The idea is to simulate the effect of variations of DNN parameters during forward pass of DNN training.
+We make Figure \ref{fig:CompGraphNI} for illustration.
+In every forward propagation, variations are sampled and are added onto parameters to calculate the loss.
+This makes the loss in backpropagation a multivariate function of inputs, labels, weights, and variations.
+Hence in backpropagation, effect of parameter variations is taken into account automatically.
+Although the form of loss function (e.g., cross entropy loss in classification tasks) remains the same, the objective is no longer the same as that of conventional training.
+It can be shown that with correct reparameterization when sampling parameter variations, the equivalent optimization objective is the mean loss under variations, i.e.,
+
+
+\begin{equation}
+\begin{aligned}
+& \underset{\vec{w}}{\text{minimize}}
+& & \mathbb{E}_{\vec{p}}(L(\vec{w}+\vec{p}))\\
+& \text{where}
+& &  \vec p \sim D_{noise}(\vec{w})\\
+\label{NI_Objective}
+\end{aligned}
+\end{equation}
+
+In \cite{Klachko2019ImprovingNT}, various VAT techniques including their combinations are studied.
+It's reported that Noise Injection is the best algorithm that works individually.
+Moreover, the top-3 combined algorithms all use Noise Injection as one of their building blocks.
+
+%\section{Limitation of the current solutions}
+One of the limitations of the current VAT algorithms is that their optimization objectives only capture the expected value of DNN losses under variations.
+Though the probability of large loss can be bounded, e.g., Markov inequality, there is a gap between optimizing a bound and optimizing an exact quantile.
+\begin{figure}[H]
+	\centering
+		\includegraphics[width=300pt]{figs/mean_limitation.pdf}
+	\caption{Mean is not always a good metric}
+	\label{fig:meanLimitation}
+\end{figure}
+Figure \ref{fig:meanLimitation} is a made-up case that illustrates the limitation.
+Suppose there is a DNN and there are two set of parameters (red and blue) one can choose.
+For each set of parameter, the distribution of accuracy under variations is plotted.
+In terms of mean accuracy, the red one outperforms the blue one.
+However, if $70\%$ accuracy is desired, the red one has more than $8\%$ chance to fail while the blue one almost never fail.
+Therefore, under extreme cases,  the blue one provides a stronger robustness guarantee than the red one.
+Current sampling based VAT -- Noise Injection algorithm, however, will lead to the less robust solution because it is not aware of the quantile of distribution.
+
+\section{Distribution-Aware Stochastic Optimization}
+\label{section-4}
+
+To bridge the gap between "optimizing the mean performance" and "optimizing the performance of majority devices", we propose a training strategy that optimize the quantile function of DNN loss under variations.
+
+When given a DNN parameterized by $\vec{w}$ and a statistical model of its parameter variation $\vec{p}\sim D_{noise}(\vec{w})$, the problem can be formulated as follows,
+
+\begin{equation}
+\begin{aligned}
+& \underset{\vec{w}}{\text{minimize}}
+& & \mathbb{Q}_{0.95}(L(\vec{w}+\vec{p}))\\
+& \text{where}
+& &  \vec p \sim D_{noise}(\vec{w})\\
+\label{problem}
+\end{aligned}
+\end{equation}
+
+$\mathbb{Q}_{p}(X)$ denotes the $p$-quantile of random variable $X$. $L(\vec{w})$ is the loss of DNN with parameter $\vec{w}$ on a dataset of interest.
+$D_{noise}(\vec{w})$ is determined by the PIM device. In our study, we start with $D_{noise}(\vec{w}) \sim N(0,(\sigma w)^2)$.
+
+To formulate the problem that optimizes high quantiles of loss, we may utilize order statistics.
+The definition of order statistics is as follows.
+
+
+\textbf{Definition 3.3.1} Let $X_1,X_2,...,X_n$ be any $n$ real-valued random variables. Let $X_{(1)}<X_{(2)}<...<X_{(n)}$ denote the ordered value of $X_1,X_2,...,X_n$. Then $X_{(1)}<X_{(2)}<...<X_{(n)}$ are called the \textit{order statistics} of $X_1,X_2,...,X_n$.
+
+We use order statistics to estimate quantiles of distributions.
+\cite{Litvak2019EstimatesFO} shows that if $X_i$ are from the same distribution, the median of $X_{(k)}$ is equivalent to the quantile of order $\frac{k-0.5}{n}$.
+This result quantifies the relation between quantiles and order statistics.
+Using this result, we formulate an optimization problem by solving which quantile optimization is done.
+Our proposed optimization problem is presented as follows
+\begin{equation}
+\begin{aligned}
+& \underset{\vec{w}}{\text{minimize}}
+& & \underset{X_1,X_2,...,X_n}{\mathbb{E}}(X_{(n)})\\
+& \text{where}
+& & X_i \sim L(\vec{p}+\vec{w},B) \;\;\; i = 1, \ldots, n.\\
+&
+& &  \vec p \sim D_{noise}(\vec{w})\\
+&
+& & B\text{: a random batch of samples from training set}\;D
+\label{DASO_obj}
+\end{aligned}
+\end{equation}
+Solving the above optimization problem approximately minimizes the $(\frac{n-0.5}{n})$-quantile of loss. The higher the quantile of optimizaion is, the larger the $n$ is in Eq.\ref{DASO_obj}. As an example, setting $n=10$ and solving Eq.\ref{DASO_obj} approximatly optimizes the $0.95$-quantile.
+If the $0.99$-quantile is to be minimized, one should solve Eq.\ref{DASO_obj} with $n=50$.
+
+%\subsection{Distribution-aware Stochastic Optimization Algorithm}
+To solve the new optimization problem, we propose our sampling-based training algorithm, which we refer to as Distribution-aware Stochastic Optimization training (DASO). DASO is still a gradient-based optimization algorithm.
+Where DASO differs from the basic sampling-based VAT is that the gradient in each optimization iteration is no longer with respect to the average loss.
+Instead, $n$ independent variations are sampled and their corresponding losses are calculated.
+The gradient is with respect to the largest losses.
+In this way, the expectations of gradients are in the right direction to guide the optimization -- they equal the gradient of objective.
+The algorithm is presented as \textbf{Algorithm-\ref{DASO}}.
+\begin{algorithm}
+\caption{Distribution-Aware Stochastic Optimization (DASO)}\label{DASO}
+\begin{algorithmic}[1]
+\item \textbf{Given}
+\item \hspace{20pt} $n$: size of order statistics
+\item \hspace{20pt} $\vec w_0$: initialization of optimization variables $\vec w$
+\item \hspace{20pt} $D_{noise}(\vec{w})$: distribution that models variations on of $\vec{w}$
+\item \hspace{20pt} $D$: training set
+\item \hspace{20pt} $L(\vec{w},S)$: function that returns loss of DNN with weight $\vec{w}$ set $S\subseteq D$
+\item \hspace{20pt} $P'$: a sampling distribution not dependent on $\vec w$
+\item \hspace{20pt} $f(\cdot,\cdot)$: a function such that $f(\vec w,\vec \epsilon) \sim D_{noise}(\vec{w})$ when $\vec\epsilon\sim P'$
+\item \hspace{20pt} $T$: number of iterations, $\eta$: step size
+%\item \hspace{20pt} $\odot$: point-wise multiplication operation
+\Procedure{}{}
+\For {$t$ in $0:T-1$}
+    \State Get a batch of samples: $B\subseteq D$
+    \State $\hat{L}\gets -\infty$
+    \State $\hat{\epsilon}\gets \vec 0$
+    \For {$i$ in $1:n$}
+        \State Sample $\vec\epsilon_i\sim P'$
+        \State $L_i\gets L(f(\vec w_t,\vec\epsilon_i),B)$
+        \State \textbf{If} $L_i > \hat{L}$:
+        \State \hspace{20pt} $\hat{L} \gets L_i$
+        \State \hspace{20pt} $\vec\hat{\epsilon_i} \gets \vec\epsilon_i$
+    \EndFor
+    \State $\vec{w}_{t+1}\gets \vec{w}_{t} -\eta\nabla_{\vec{w}_{t}}L(f(\vec w_t,\vec\hat{\epsilon_i}),B)$
+\EndFor
+\State \textbf{return } $\vec w_T$
+\EndProcedure
+\end{algorithmic}
+\end{algorithm}
+
+To justify that \textbf{Algorithm-\ref{DASO}} works,  we show that the expectations of
+gradients equal the gradients of objective.
+In our case, we show that the expectation of graidents calculated in \textbf{Algorithm-\ref{DASO}} (line $21$) equals the gradient of objective in Eq-\ref{DASO_obj}, i.e.,
+
+\begin{equation}
+    \mathbb{E}_{\vec{\epsilon_1},\ldots,\vec{\epsilon_n},B}\left [\nabla_{w}L(f(\vec w_t,\vec\hat{\epsilon_i}),B)\right] = \nabla_{w} \mathbb{E}_{{\vec{\epsilon_1},\ldots,\vec{\epsilon_n},B}}\left[X_{(n)}\right]
+    \label{proof_DASO_1}
+\end{equation}
+\begin{proof}
+The left hand side of Eq-\ref{proof_DASO_1} is equivalent to
+
+\begin{equation}
+    \mathbb{E}_{\vec{\epsilon_1},\ldots,\vec{\epsilon_n},B}\left[\nabla_{w}\underset{i=1,\ldots,n}{\max} \{L(f(\vec w_t,\vec{\epsilon_i}),B)\}\right]
+    \label{proof_DASO_2}
+\end{equation}
+
+the right hand side of (\ref{proof_DASO_1}) is equivalent to
+
+\begin{equation}
+    \nabla_{w}\mathbb{E}_{\vec{\epsilon_1},\ldots,\vec{\epsilon_n},B}\left[\underset{i=1,\ldots,n}{\max} \{L(f(\vec w_t,\vec{\epsilon_i}),B)\}\right]
+    \label{proof_DASO_3}
+\end{equation}
+
+Because random variables $\vec{\epsilon}$ and $B$ are not parameterized by $\vec{w}$, the gradient operator of (\ref{proof_DASO_3}) can be moved inside the expectation. (\ref{proof_DASO_2}) equals (\ref{proof_DASO_3}) follows.
+%hence (\ref{proof_DASO_1}) is true. Therefore, (\ref{DASO_obj}) is indeed the objective of DASO.
+\end{proof}
+
+\section{Experiments}
+To test our proposed DASO training algorithm and compared the results with Noise Injection.
+We have two sets of experiments.
+%The first set is on a 5-layer MLP with width of 16 on MNIST.
+The first set of experiments is on the MNIST dataset using a five-layer MLP with an width of 16 on each layer.
+%The other set is on the ResNet-18 on CIFAR10.
+The second set  is on the CIFAR10 dataset using a ResNet18 model.
+
+Our implementation of both Noise Injection and DASO is based on the Pytorch framework.
+
+In each set of experiments, we examine 5 variation levels: $\sigma=0.1,\,0.2,\,0.3,\,0.4,\,0.5$.
+As discussed in section \ref{section-4}, $\sigma$ is the parameter that determines how strong the variations are compared to weights:
+$D_{noise}(\vec{w}) \sim N(0,(\sigma w)^2)$.
+For each noise level, we train two models respectively with Noise Injection and DASO.
+For testing of a trained model under a certain variation level, we sample 10000 variations and add them to the trained model, resulting in 10000 DNNs that simulates 10000 devices.
+For each device, we test it on the test set of corresponding dataset and record its accuracy and loss.
+For naming, we use "dasoN" to represent daso algorithm trained with n=N where n is the hyperparameter for order statistics as shown in \textbf{Algorithm \ref{DASO}}.
+\begin{figure}[H]
+	\includegraphics[width=430pt]{figs/mlpPlt2.pdf}
+	\caption{MLP on MNIST: Statistics of device distribution}
+	\label{mlp}
+\end{figure}
+The result of MLP on MNIST is presented in Figure \ref{mlp}.
+Under all 5 variation levels, DASO consistently improves the 95\%-quantile loss, which is our optimization goal.
+As a result, the 5\%-quantile of accuracy, which roughly corresponds to the 95\%-quantile loss, gets improved.
+In this experiment, both accuracy and loss guarantee on 95\% devices are improved.
+As an example, under variation level 0.5, DASO provides 92\% accuracy guarantee on 95\% devices but Noise Injection only provides 91\% accuracy guarantee.
+Although other statistics shown in the plot is not of our major optimization interest, we observe that mean accuracy is also slightly improved.
+In general the spread of DNN performance of DASO is smaller than Noise Injection and this is a desirable property for quality control of manufacturers.
+To see this, in terms of the 5\% to 95\%-quantile accuracy of DNN devices, DASO gives range $(92\%,93.5\%)$ but that of Noise Injection is $(91\%,93.7\%)$.
+
+\begin{figure}[H]
+	\includegraphics[width=430pt]{figs/resnetPlt2.pdf}
+	\caption{ResNet18 on CIFAR10: Statistics of device distribution}
+	\label{resnet1}
+\end{figure}
+\begin{figure}[H]
+	\includegraphics[width=430pt]{figs/resnetPlt3.png}
+	\caption{Smaller Loss and Worse Accuracy}
+	\label{resnet2}
+\end{figure}
+The result of ResNet18 on CIFAR10 is presented in Figure \ref{resnet1}.
+Under all 5 variation levels, DASO consistently improves the 95\%-quantile loss, which is our optimization goal.
+Under noise 0.5, DASO reduce the 95\%-quantile loss by 15\%.
+However, improvement of loss is not reflected in the accuracy.
+Under cases, smaller test loss is observed to give worse accuracy (Figure \ref{resnet2}, noise=0.3).
+
+
+\section{Conclusion}
+In this work, we propose DASO, a DNN training algorithm that optimize the quantile of loss under parameter variations.
+The new algorithm helps to give a better loss guarantee for 95\% devices with variations.
+The proposed algorithm is observed to improve the high-quantile loss effectively for different models and datasets we test under all variation levels.
+Measured in cross entropy loss, the improvement is observed to have up to 15\% reduction of the loss.
+In our tests, the algorithm also gives higher accuracy guarantee for 95\% devices when MLP is the DNN model being implemented.
+The accuracy improvement is up to 1\%.
+However, accuracy improvement is not always guaranteed as we observe in some cases smaller cross entropy loss results in worse accuracy.
+
+Since DASO aims at optimizing the quantile, which is more challenging than optimizing the mean, the training is time-consuming.
+When the number of samples used in DASO is set to 50, the algorithm is up to 4x slower than Noise Injection algorithm when trained on a single GPU with naive implementation.
+However, the sampling in our algorithm is parallelizable so one can trade off the training speed with GPU memory if needed.
+For the future work, one may explore superior sampling strategies with higher efficiency.
+To turn "better guarantee in terms of loss", which we have already achieved by DASO, into "better guarantee in terms of accuracy", one may need to find a better loss function that provides stronger relation between the order of loss values and the order of accuracy values so that event "smaller loss leads to higher accuracy" is with larger probability.
+
+\iffalse
+\section{Side notes}
+For a linear model, instead of solving a SOCP as proposed in Vortex \cite{Liu2015VortexVT}, we found a closed-form solution to optimize the mean performance of model under parameter variations ($\delta_w$).
+\begin{equation}
+\begin{aligned}
+& \underset{w}{\text{minimize}}
+& & \mathbb{E}(||(A+\delta_{A})(w+\delta{w})-y||_{2}^{2})\\
+& \text{subject to}
+& & Var(\delta_{A})_{i,j} = (\sigma_{1}|A_{i,j}|)^{2}\\
+&
+& &  Var(\delta_{w})_{i} = (\sigma_{2}|w_{i}|)^{2}\\
+\label{rbls_orig}
+\end{aligned}
+\end{equation}
+Is equivalent to the following problem,
+\begin{equation}
+\begin{aligned}
+& \underset{w}{\text{minimize}}
+& & ||Aw - y||_{2}^{2} + \sum\limits_{i=1}^{n}(\sigma_1^2+\sigma_2^2+\sigma_1^2\sigma_2^2)||a_i||_2^2w_i^2\\
+\label{rbls_reg}
+\end{aligned}
+\end{equation}
+Where $A$ is of shape (\#samples,\#features), $w$ is of shape (\#features,1).
+$A$ represents the training samples.
+$w$ represents a set of parameters responsible for a single dimension of the model outputs.
+
+The solution of above (\ref{rbls_reg}) can be easily derived as,
+
+
+\begin{equation}
+\begin{aligned}
+& \underset{w}{\text{minimize}}
+& & ||A'w - y'||_{2}^{2} \\
+\end{aligned}
+\label{rbls_eqv}
+\end{equation}
+
+with $A'=\begin{pmatrix}A\\C_A\end{pmatrix},y'=\begin{pmatrix}y\\0\end{pmatrix},C_A=\sqrt{(\sigma_1^2+\sigma_2^2+\sigma_1^2\sigma_2^2)}\text{diag}(||a_1||_2,||a_2||_2,...,||a_n||_2)$,
+
+where $a_i$ denotes $i$th column of A, and the solution will be,
+
+$$w = A'^{+}y'$$
+
+This result has two implications.
+
+First, given a well trained multi-layer DNN, we may find a robust version(re-trained) by hierarchically finding A and estimate its variance from the first layer to the last.
+For $i$th layer, we can estimate its input A and the variance of A by sampling n variations and re-evaluate the training samples using the first  $(i-1)$ re-trained layers.
+We can take $y$ to be the output of orginal model of $i$th layer.
+Solving the $w = A'^{+}y'$ will get us a robustified version of parameters in that layer.
+
+Second, the regularization term in (\ref{rbls_reg}) gives us some hints on how to regularize a DNN model.
+The coefficient of certain parameter not only depends on the level of noise $\sigma_1, \sigma_2$, it also depends on the average magnitude of the inputs to that parameter on a certain dataset.
+If a parameter is always multiplied with a big input, then the degree of regularization for that parameter should be larger.
+\fi
+
+
+\bibliographystyle{acm}
+\bibliography{main.bib}
+\end{document}

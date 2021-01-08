@@ -17,7 +17,7 @@ class npMLP():
         self.bs = []
         if cMLP_model_path is None:
             return
-        st_dict = torch.load(cMLP_model_path)
+        st_dict = torch.load(cMLP_model_path,map_location='cpu')
         print("loading saved model: %s"%cMLP_model_path)
         for name in st_dict:
             print(name)

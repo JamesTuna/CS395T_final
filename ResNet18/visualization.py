@@ -4,9 +4,9 @@ import matplotlib.pyplot as plt
 
 
 ####################################### accuracy ########################################
-high_qtl = 0.95
-low_qtl = 0.05
-daso_n=50
+high_qtl = 0.99
+low_qtl = 0.01
+daso_n=5
 
 noise_list = [0.2,0.4,0.6,0.8,1.0]
 
